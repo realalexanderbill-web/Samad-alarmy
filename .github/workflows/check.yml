@@ -38,6 +38,7 @@ jobs:
           TG_TOKEN = os.environ["TG_TOKEN"]
           TG_CHAT = os.environ["TG_CHAT_ID"]
           STATE = "state.txt"
+          FAILED, NAVS = [], []
 
           # بررسی صفحه غذا (بعد از لاگین)
           JS_FOOD = """
@@ -80,7 +81,7 @@ jobs:
 
           def write_diag(page, err):
               """اطلاعات تشخیصی غیرحساس برای عیب‌یابی (بدون رمز و نام کاربری)"""
-              lines = ["error: " + err]
+              lines = ["error: " + err[:300], "navs: " + " -> ".join(NAVS[-8:]), "failed: " + " | ".join(FAILED[-5:])]
               try:
                   lines.append("url: " + page.url)
                   lines.append("title: " + page.title())
@@ -135,6 +136,8 @@ jobs:
               with sync_playwright() as p:
                   b = p.chromium.launch()
                   page = b.new_page(locale="fa-IR")
+                  page.on("requestfailed", lambda r: FAILED.append(r.url[:200] + " :: " + str(r.failure)))
+                  page.on("framenavigated", lambda f: NAVS.append(f.url[:200]) if f == page.main_frame else None)
                   err = ""
                   try:
                       ok = login(page)
