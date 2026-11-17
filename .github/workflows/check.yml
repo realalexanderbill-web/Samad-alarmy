@@ -26,7 +26,7 @@ jobs:
       - name: Write monitor script
         run: |
           cat > monitor.py <<'PYEOF'
-          import os, sys, json, time, urllib.request, urllib.parse
+          import os, re, json, urllib.request, urllib.parse
           from playwright.sync_api import sync_playwright
 
           LOGIN_URL = "https://samad.app/login"
@@ -39,16 +39,11 @@ jobs:
           TG_CHAT = os.environ["TG_CHAT_ID"]
           STATE = "state.txt"
 
-          JS = """
-          (function(U,P,UNI,WEEK){
-            function setVal(el,v){
-              var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
-              d.set.call(el,v);
-              el.dispatchEvent(new Event('input',{bubbles:true}));
-              el.dispatchEvent(new Event('change',{bubbles:true}));
-            }
+          # بررسی صفحه غذا (بعد از لاگین)
+          JS_FOOD = """
+          (function(WEEK){
             function clickText(t){
-              var all=document.querySelectorAll('button,a,li,div,span,label,option,[role=option],[role=tab]');
+              var all=document.querySelectorAll('button,a,li,div,span,label,[role=tab]');
               var best=null;
               for(var i=0;i<all.length;i++){
                 var tx=(all[i].innerText||'').trim();
@@ -56,25 +51,6 @@ jobs:
               }
               if(best){best.click();return true;}
               return false;
-            }
-            var pass=document.querySelector('input[type=password]');
-            if(location.href.indexOf('login')>-1 || pass){
-              var sel=document.querySelector('select');
-              if(sel){
-                for(var i=0;i<sel.options.length;i++){
-                  if(sel.options[i].text.indexOf(UNI)>-1){
-                    sel.value=sel.options[i].value;
-                    sel.dispatchEvent(new Event('change',{bubbles:true}));
-                  }
-                }
-              }
-              if(!pass){ clickText(UNI); return 'login'; }
-              var user=document.querySelector('input[type=text],input[type=tel],input[type=number],input:not([type])');
-              if(user) setVal(user,U);
-              setVal(pass,P);
-              var btn=document.querySelector('button[type=submit]');
-              if(btn) btn.click(); else clickText('ورود');
-              return 'login';
             }
             clickText(WEEK);
             var body=document.body.innerText;
@@ -94,32 +70,83 @@ jobs:
               except FileNotFoundError:
                   return ""
 
+          def snapshot(page, name):
+              """اسکرین‌شات بدون اطلاعات حساس (فیلدها قبل از عکس پاک می‌شوند)"""
+              try:
+                  page.evaluate("document.querySelectorAll('input').forEach(i=>{if(i.type!=='hidden'){i.value=''}})")
+              except Exception:
+                  pass
+              page.screenshot(path=name + ".png", full_page=True)
+
+          def login(page):
+              page.goto(LOGIN_URL, timeout=60000)
+              page.wait_for_load_state("networkidle")
+              page.wait_for_timeout(2000)
+
+              # فیلد اول: انتخاب دانشگاه
+              first = page.locator("input:visible, select:visible").first
+              tag = first.evaluate("e=>e.tagName.toLowerCase()")
+              if tag == "select":
+                  val = first.evaluate(
+                      "(e,t)=>{for(const o of e.options){if(o.text.indexOf(t)>-1)return o.value}return null}", UNIVERSITY)
+                  first.select_option(value=val)
+              else:
+                  first.click()
+                  page.wait_for_timeout(800)
+                  try:
+                      first.fill(UNIVERSITY)
+                  except Exception:
+                      pass
+                  page.wait_for_timeout(1500)
+                  opt = page.get_by_role("option", name=re.compile(UNIVERSITY))
+                  if opt.count() == 0:
+                      opt = page.get_by_text(UNIVERSITY)
+                  opt.first.click()
+              page.wait_for_timeout(1500)
+
+              # فیلد دوم و سوم: کاربری و رمز
+              texts = page.locator("input:visible:not([type=password])")
+              user = texts.nth(1 if tag != "select" else 0)
+              pw = page.locator("input[type=password]:visible").first
+              user.fill(USER)
+              pw.fill(PASS)
+              page.wait_for_timeout(500)
+
+              btn = page.locator("button[type=submit]:visible, button:has-text('ورود'):visible")
+              if btn.count():
+                  btn.first.click()
+              else:
+                  pw.press("Enter")
+              page.wait_for_load_state("networkidle", timeout=30000)
+              page.wait_for_timeout(4000)
+              return page.locator("input[type=password]:visible").count() == 0
+
           def run():
               with sync_playwright() as p:
                   b = p.chromium.launch()
                   page = b.new_page(locale="fa-IR")
-                  page.goto(LOGIN_URL, timeout=60000)
-                  page.wait_for_load_state("networkidle")
-                  status = "login"
-                  for _ in range(8):
-                      status = page.evaluate(JS + "(%s,%s,%s,%s)" % tuple(
-                          json.dumps(x) for x in (USER, PASS, UNIVERSITY, WEEK_TEXT)))
-                      page.wait_for_timeout(4000)
-                      if status != "login":
-                          break
-                  if status != "login" and FOOD_URL:
+                  try:
+                      ok = login(page)
+                  except Exception as e:
+                      print("login exception:", e)
+                      ok = False
+                  if not ok:
+                      snapshot(page, "debug")
+                      open("debug.html", "w", encoding="utf-8").write(page.content())
+                      b.close()
+                      return "error_login"
+                  if FOOD_URL:
                       page.goto(FOOD_URL, timeout=60000)
                       page.wait_for_load_state("networkidle")
                       page.wait_for_timeout(3000)
-                  if status != "login":
-                      for _ in range(2):  # بار اول روی تب هفته بعد کلیک می‌شود، بار دوم نتیجه
-                          status = page.evaluate(JS + "(%s,%s,%s,%s)" % tuple(
-                              json.dumps(x) for x in (USER, PASS, UNIVERSITY, WEEK_TEXT)))
-                          page.wait_for_timeout(3000)
-                  page.screenshot(path="debug.png", full_page=True)
+                  status = "closed"
+                  for _ in range(2):  # بار اول کلیک روی تب هفته بعد، بار دوم نتیجه
+                      status = page.evaluate(JS_FOOD + "(%s)" % json.dumps(WEEK_TEXT))
+                      page.wait_for_timeout(3000)
+                  snapshot(page, "debug")
                   open("debug.html", "w", encoding="utf-8").write(page.content())
                   b.close()
-              return "error_login" if status == "login" else status
+              return status
 
           def main():
               if os.environ.get("TEST") == "true":
@@ -135,10 +162,11 @@ jobs:
                   tg("🔔 غذای هفته بعد در سمد باز شد! بدو رزرو کن")
               elif status.startswith("error") and prev != status:
                   tg("⚠️ پایش سمد خطا داد (%s). لاگین یا ساختار صفحه را چک کنید." % status)
+              elif prev.startswith("error") and not status.startswith("error"):
+                  tg("✅ لاگین سمد درست شد؛ وضعیت فعلی: %s" % status)
               open(STATE, "w").write(status)
 
           main()
-
           PYEOF
       - name: Run check
         env:
