@@ -107,14 +107,29 @@ jobs:
               uni.click()
               page.wait_for_timeout(1500)
 
-              # نام کاربری و رمز
-              page.locator("input[name=username]").first.fill(USER)
-              page.locator("input[name=password]").first.fill(PASS)
-              page.wait_for_timeout(500)
+              # دکمه ورود: کاربر به سایت ورود دانشگاه منتقل می‌شود
               page.get_by_role("button", name="ورود", exact=True).first.click()
-              page.wait_for_load_state("networkidle", timeout=30000)
-              page.wait_for_timeout(4000)
-              return page.locator("input[type=password]:visible").count() == 0
+              page.wait_for_load_state("networkidle", timeout=45000)
+              page.wait_for_timeout(3000)
+
+              # فرم ورود (ممکن است روی دامنه دیگری باشد)
+              pw = page.locator("input[type=password]:visible").first
+              pw.wait_for(timeout=30000)
+              user = page.locator(
+                  "input:visible:not([type=password]):not([type=hidden]):not([type=checkbox]):not([type=submit])").first
+              user.fill(USER)
+              pw.fill(PASS)
+              page.wait_for_timeout(500)
+              submit = page.locator("button[type=submit]:visible, input[type=submit]:visible")
+              if submit.count():
+                  submit.first.click()
+              else:
+                  pw.press("Enter")
+              page.wait_for_load_state("networkidle", timeout=45000)
+              page.wait_for_timeout(5000)
+              # موفق: دوباره در samad.app هستیم و فرم رمز دیگر دیده نمی‌شود
+              return "samad.app" in page.url and "login" not in page.url and \
+                  page.locator("input[type=password]:visible").count() == 0
 
           def run():
               with sync_playwright() as p:
