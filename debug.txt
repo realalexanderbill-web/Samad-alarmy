@@ -1,66 +1,19 @@
-error: Locator.click: Timeout 30000ms exceeded.
+error: Locator.fill: Timeout 30000ms exceeded.
 Call log:
-  - waiting for locator("input:visible, select:visible").first
-    - locator resolved to <input disabled value="" type="text" spellcheck="false" placeholder="دانشگاه را انتخاب کنید" class="ant-input ant-input-disabled ant-input-rtl css-5qv9xe ant-input-outlined auth-input"/>
-  - attempting click action
-    2 × waiting for element to be visible, enabled and stable
-      - element is not enabled
-    - retrying click action
-    - waiting 20ms
-    2 × waiting for element to be visible, enabled and stable
-      - element is not enabled
-    - retrying click action
-      - waiting 100ms
-    58 × waiting for element to be visible, enabled and stable
-       - element is not enabled
-     - retrying click action
-       - waiting 500ms
+  - waiting for locator("input[name=username]").first
 
 url: https://samad.app/login
 title: اپلیکیشن سماد - Samad
 elements:
 INPUT type=text name= ph=دانشگاه را انتخاب کنید vis=true text=
-INPUT type=text name=username ph=نام کاربری vis=true text=
-INPUT type=password name=password ph=رمز عبور vis=true text=
 BUTTON type=button name= ph= vis=true text=ورود
-BUTTON type=button name= ph= vis=true text=
-INPUT type=text name= ph=نام دانشگاه را جستجو کنید... vis=true text=
 body:
 ورود به سامانه مدیریت امور دانشجویی
 راهنمای ورود به سماد
+
+با انتخاب دکمه ورود، به سایت ورود منتقل می شوید و پس از اتمام مراحل به اپلیکیشن سماد بر می گردید.
+
 ورود
+ورود با نام کاربری و رمز عبور
 اطلاعیه‌ای یافت نشد
 شرکت دانش بنیان داده کاوان اندیشه برتر
-انتخاب دانشگاه
-دانشگاه الزهرا (س)
-دانشگاه سمنان
-دانشگاه بین المللی امام خمینی (ره)
-دانشگاه تهران
-دانشگاه شهید بهشتی
-دانشگاه بوعلی سینا
-دانشگاه شهید رجایی
-دانشگاه صنعتی امیرکبیر
-دانشگاه صنعتی شریف
-دانشگاه صنعتی خواجه نصیرالدین طوسی
-دانشگاه تبریز
-دانشگاه تبریز (واحد اقماری اهر)
-دانشگاه تبریز (واحد اقماری مرند)
-دانشگاه تبریز (واحد اقماری میانه)
-دانشگاه صنعتی کرمانشاه
-دانشگاه جیرفت
-دانشگاه علم و صنعت ایران
-دانشگاه قرآن و حدیث (قم)
-دانشگاه گیلان
-دانشگاه ملی ارومیه
-دانشگاه امام حسین (ع)
-دانشگاه هنر ایران
-موسسه مشکات
-دانشگاه فنی و حرفه ای (همه واحدها)
-دانشگاه آزاد غرب
-پژوهشگاه مواد و انرژی
-دانشگاه قرآن و حدیث (تهران)
-شرکت مپنا
-واحد توسعه 1
-واحد پشتیبانی
-واحد پشتیبانی1
-واحد پشتیبانی2
