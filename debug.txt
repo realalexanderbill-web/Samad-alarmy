@@ -2,6 +2,8 @@ error: Locator.wait_for: Timeout 30000ms exceeded.
 Call log:
   - waiting for locator("input[type=password]:visible").first to be visible
 
+navs: https://samad.app/login -> https://samad.app/login -> chrome-error://chromewebdata/
+failed: https://dining.sbu.ac.ir/rest/announcements :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/config/release :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/announcements :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/captcha :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/index.rose?sharifOauthRedirect=true&pwa=true :: net::ERR_CONNECTION_CLOSED
 url: chrome-error://chromewebdata/
 title: 
 elements:
