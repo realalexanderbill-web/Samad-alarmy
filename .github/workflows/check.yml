@@ -1,0 +1,165 @@
+name: Samad check
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      test:
+        description: 'send test Telegram message'
+        type: boolean
+        default: false
+permissions:
+  contents: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+      - name: Write monitor script
+        run: |
+          cat > monitor.py <<'PYEOF'
+          import os, sys, json, time, urllib.request, urllib.parse
+          from playwright.sync_api import sync_playwright
+
+          LOGIN_URL = "https://samad.app/login"
+          UNIVERSITY = "شهید بهشتی"
+          WEEK_TEXT = "هفته بعد"
+          FOOD_URL = os.environ.get("FOOD_URL", "").strip()
+          USER = os.environ["SAMAD_USER"]
+          PASS = os.environ["SAMAD_PASS"]
+          TG_TOKEN = os.environ["TG_TOKEN"]
+          TG_CHAT = os.environ["TG_CHAT_ID"]
+          STATE = "state.txt"
+
+          JS = """
+          (function(U,P,UNI,WEEK){
+            function setVal(el,v){
+              var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+              d.set.call(el,v);
+              el.dispatchEvent(new Event('input',{bubbles:true}));
+              el.dispatchEvent(new Event('change',{bubbles:true}));
+            }
+            function clickText(t){
+              var all=document.querySelectorAll('button,a,li,div,span,label,option,[role=option],[role=tab]');
+              var best=null;
+              for(var i=0;i<all.length;i++){
+                var tx=(all[i].innerText||'').trim();
+                if(tx.indexOf(t)>-1 && (!best || tx.length<(best.innerText||'').trim().length)) best=all[i];
+              }
+              if(best){best.click();return true;}
+              return false;
+            }
+            var pass=document.querySelector('input[type=password]');
+            if(location.href.indexOf('login')>-1 || pass){
+              var sel=document.querySelector('select');
+              if(sel){
+                for(var i=0;i<sel.options.length;i++){
+                  if(sel.options[i].text.indexOf(UNI)>-1){
+                    sel.value=sel.options[i].value;
+                    sel.dispatchEvent(new Event('change',{bubbles:true}));
+                  }
+                }
+              }
+              if(!pass){ clickText(UNI); return 'login'; }
+              var user=document.querySelector('input[type=text],input[type=tel],input[type=number],input:not([type])');
+              if(user) setVal(user,U);
+              setVal(pass,P);
+              var btn=document.querySelector('button[type=submit]');
+              if(btn) btn.click(); else clickText('ورود');
+              return 'login';
+            }
+            clickText(WEEK);
+            var body=document.body.innerText;
+            var closed=['باز نشده','غیرفعال','ثبت نشده','موجود نیست'];
+            for(var j=0;j<closed.length;j++){ if(body.indexOf(closed[j])>-1) return 'closed'; }
+            return body.indexOf('رزرو')>-1 ? 'open' : 'closed';
+          })
+          """
+
+          def tg(text):
+              data = urllib.parse.urlencode({"chat_id": TG_CHAT, "text": text}).encode()
+              urllib.request.urlopen(f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage", data, timeout=20)
+
+          def read_state():
+              try:
+                  return open(STATE).read().strip()
+              except FileNotFoundError:
+                  return ""
+
+          def run():
+              with sync_playwright() as p:
+                  b = p.chromium.launch()
+                  page = b.new_page(locale="fa-IR")
+                  page.goto(LOGIN_URL, timeout=60000)
+                  page.wait_for_load_state("networkidle")
+                  status = "login"
+                  for _ in range(8):
+                      status = page.evaluate(JS + "(%s,%s,%s,%s)" % tuple(
+                          json.dumps(x) for x in (USER, PASS, UNIVERSITY, WEEK_TEXT)))
+                      page.wait_for_timeout(4000)
+                      if status != "login":
+                          break
+                  if status != "login" and FOOD_URL:
+                      page.goto(FOOD_URL, timeout=60000)
+                      page.wait_for_load_state("networkidle")
+                      page.wait_for_timeout(3000)
+                  if status != "login":
+                      for _ in range(2):  # بار اول روی تب هفته بعد کلیک می‌شود، بار دوم نتیجه
+                          status = page.evaluate(JS + "(%s,%s,%s,%s)" % tuple(
+                              json.dumps(x) for x in (USER, PASS, UNIVERSITY, WEEK_TEXT)))
+                          page.wait_for_timeout(3000)
+                  page.screenshot(path="debug.png", full_page=True)
+                  open("debug.html", "w", encoding="utf-8").write(page.content())
+                  b.close()
+              return "error_login" if status == "login" else status
+
+          def main():
+              if os.environ.get("TEST") == "true":
+                  tg("✅ تست تلگرام موفق بود")
+              prev = read_state()
+              try:
+                  status = run()
+              except Exception as e:
+                  status = "error_exception"
+                  print("ERR", e)
+              print("status:", status, "prev:", prev)
+              if status == "open" and prev != "open":
+                  tg("🔔 غذای هفته بعد در سمد باز شد! بدو رزرو کن")
+              elif status.startswith("error") and prev != status:
+                  tg("⚠️ پایش سمد خطا داد (%s). لاگین یا ساختار صفحه را چک کنید." % status)
+              open(STATE, "w").write(status)
+
+          main()
+
+          PYEOF
+      - name: Run check
+        env:
+          SAMAD_USER: ${{ secrets.SAMAD_USER }}
+          SAMAD_PASS: ${{ secrets.SAMAD_PASS }}
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          FOOD_URL: ${{ vars.FOOD_URL }}
+          TEST: ${{ inputs.test }}
+        run: python monitor.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: debug
+          path: |
+            debug.png
+            debug.html
+      - name: Save state
+        if: always()
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add state.txt || true
+          git diff --cached --quiet || (git commit -m "state" && git push)
