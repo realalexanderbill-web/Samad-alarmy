@@ -78,6 +78,21 @@ jobs:
                   pass
               page.screenshot(path=name + ".png", full_page=True)
 
+          def write_diag(page, err):
+              """اطلاعات تشخیصی غیرحساس برای عیب‌یابی (بدون رمز و نام کاربری)"""
+              lines = ["error: " + err]
+              try:
+                  lines.append("url: " + page.url)
+                  lines.append("title: " + page.title())
+                  inputs = page.evaluate("""()=>Array.from(document.querySelectorAll('input,select,button')).map(e=>
+                      e.tagName+' type='+(e.type||'')+' name='+(e.name||'')+' ph='+(e.placeholder||'')+' vis='+(e.offsetParent!==null)+' text='+((e.innerText||'').slice(0,30)))""")
+                  lines.append("elements:\n" + "\n".join(inputs[:30]))
+                  body = page.evaluate("document.body.innerText")
+                  lines.append("body:\n" + body[:1500])
+              except Exception as e2:
+                  lines.append("diag failed: " + str(e2)[:300])
+              open("debug.txt", "w", encoding="utf-8").write("\n".join(lines))
+
           def login(page):
               page.goto(LOGIN_URL, timeout=60000)
               page.wait_for_load_state("networkidle")
@@ -125,12 +140,15 @@ jobs:
               with sync_playwright() as p:
                   b = p.chromium.launch()
                   page = b.new_page(locale="fa-IR")
+                  err = ""
                   try:
                       ok = login(page)
                   except Exception as e:
-                      print("login exception:", e)
+                      err = str(e)[:1500]
+                      print("login exception:", err)
                       ok = False
                   if not ok:
+                      write_diag(page, err)
                       snapshot(page, "debug")
                       open("debug.html", "w", encoding="utf-8").write(page.content())
                       b.close()
@@ -184,10 +202,11 @@ jobs:
           path: |
             debug.png
             debug.html
+            debug.txt
       - name: Save state
         if: always()
         run: |
           git config user.name "bot"
           git config user.email "bot@users.noreply.github.com"
-          git add state.txt || true
+          git add state.txt debug.txt || true
           git diff --cached --quiet || (git commit -m "state" && git push)
