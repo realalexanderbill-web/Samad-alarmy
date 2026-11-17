@@ -1,11 +1,17 @@
-error: Locator.wait_for: Timeout 30000ms exceeded.
-Call log:
-  - waiting for locator("input[type=password]:visible").first to be visible
-
-navs: https://samad.app/login -> https://samad.app/login -> chrome-error://chromewebdata/
-failed: https://dining.sbu.ac.ir/rest/announcements :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/config/release :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/announcements :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/captcha :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/index.rose?sharifOauthRedirect=true&pwa=true :: net::ERR_CONNECTION_CLOSED
-url: chrome-error://chromewebdata/
-title: 
+error: 
+navs: https://samad.app/login -> https://samad.app/login
+failed: https://dining.sbu.ac.ir/rest/config/release :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/announcements :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/captcha :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/oauth/token :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/captcha :: net::ERR_CONNECTION_CLOSED
+url: https://samad.app/login
+title: اپلیکیشن سماد - Samad
 elements:
-
+INPUT type=text name= ph=دانشگاه را انتخاب کنید vis=true text=
+INPUT type=text name=username ph=نام کاربری vis=true text=
+INPUT type=password name=password ph=رمز عبور vis=true text=
+BUTTON type=button name= ph= vis=true text=ورود
 body:
+ورود به سامانه مدیریت امور دانشجویی
+راهنمای ورود به سماد
+ورود
+ورود با احرازهویت مرکزی
+اطلاعیه‌ای یافت نشد
+شرکت دانش بنیان داده کاوان اندیشه برتر
