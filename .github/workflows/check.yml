@@ -30,7 +30,7 @@ jobs:
           from playwright.sync_api import sync_playwright
 
           LOGIN_URL = "https://samad.app/login"
-          UNIVERSITY = "شهید بهشتی"
+          UNIVERSITY = "دانشگاه شهید بهشتی"
           WEEK_TEXT = "هفته بعد"
           FOOD_URL = os.environ.get("FOOD_URL", "").strip()
           USER = os.environ["SAMAD_USER"]
@@ -98,40 +98,20 @@ jobs:
               page.wait_for_load_state("networkidle")
               page.wait_for_timeout(2000)
 
-              # فیلد اول: انتخاب دانشگاه
-              first = page.locator("input:visible, select:visible").first
-              tag = first.evaluate("e=>e.tagName.toLowerCase()")
-              if tag == "select":
-                  val = first.evaluate(
-                      "(e,t)=>{for(const o of e.options){if(o.text.indexOf(t)>-1)return o.value}return null}", UNIVERSITY)
-                  first.select_option(value=val)
-              else:
-                  first.click()
-                  page.wait_for_timeout(800)
-                  try:
-                      first.fill(UNIVERSITY)
-                  except Exception:
-                      pass
-                  page.wait_for_timeout(1500)
-                  opt = page.get_by_role("option", name=re.compile(UNIVERSITY))
-                  if opt.count() == 0:
-                      opt = page.get_by_text(UNIVERSITY)
-                  opt.first.click()
+              # انتخاب دانشگاه از لیست (فیلد اول غیرفعال است و فقط از لیست انتخاب می‌شود)
+              uni = page.get_by_text(UNIVERSITY, exact=True).first
+              if not uni.is_visible():
+                  opener = page.locator("button:visible:not(:has-text('ورود'))").first
+                  opener.click()
+                  page.wait_for_timeout(1000)
+              uni.click()
               page.wait_for_timeout(1500)
 
-              # فیلد دوم و سوم: کاربری و رمز
-              texts = page.locator("input:visible:not([type=password])")
-              user = texts.nth(1 if tag != "select" else 0)
-              pw = page.locator("input[type=password]:visible").first
-              user.fill(USER)
-              pw.fill(PASS)
+              # نام کاربری و رمز
+              page.locator("input[name=username]").first.fill(USER)
+              page.locator("input[name=password]").first.fill(PASS)
               page.wait_for_timeout(500)
-
-              btn = page.locator("button[type=submit]:visible, button:has-text('ورود'):visible")
-              if btn.count():
-                  btn.first.click()
-              else:
-                  pw.press("Enter")
+              page.get_by_role("button", name="ورود", exact=True).first.click()
               page.wait_for_load_state("networkidle", timeout=30000)
               page.wait_for_timeout(4000)
               return page.locator("input[type=password]:visible").count() == 0
