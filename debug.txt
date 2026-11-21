@@ -1,6 +1,6 @@
 error: 
 navs: https://samad.app/login -> https://samad.app/login
-failed: https://dining.sbu.ac.ir/rest/config/release :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/announcements :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/captcha :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/oauth/token :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/captcha :: net::ERR_CONNECTION_CLOSED
+failed: https://dining.sbu.ac.ir/rest/config/release :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/captcha :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/announcements :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/oauth/token :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/captcha :: net::ERR_CONNECTION_CLOSED
 url: https://samad.app/login
 title: اپلیکیشن سماد - Samad
 elements:
