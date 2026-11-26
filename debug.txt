@@ -1,17 +1,21 @@
-error: 
+error: Locator.fill: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("input[name=username]").first
+
 navs: https://samad.app/login -> https://samad.app/login
-failed: https://dining.sbu.ac.ir/rest/config/release :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/announcements :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/captcha :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/oauth/token :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/captcha :: net::ERR_CONNECTION_CLOSED
+failed: https://dining.sbu.ac.ir/rest/announcements :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/config/release :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/announcements :: net::ERR_CONNECTION_CLOSED | https://dining.sbu.ac.ir/rest/captcha :: net::ERR_CONNECTION_CLOSED
 url: https://samad.app/login
 title: اپلیکیشن سماد - Samad
 elements:
 INPUT type=text name= ph=دانشگاه را انتخاب کنید vis=true text=
-INPUT type=text name=username ph=نام کاربری vis=true text=
-INPUT type=password name=password ph=رمز عبور vis=true text=
 BUTTON type=button name= ph= vis=true text=ورود
 body:
 ورود به سامانه مدیریت امور دانشجویی
 راهنمای ورود به سماد
+
+با انتخاب دکمه ورود، به سایت ورود منتقل می شوید و پس از اتمام مراحل به اپلیکیشن سماد بر می گردید.
+
 ورود
-ورود با احرازهویت مرکزی
+ورود با نام کاربری و رمز عبور
 اطلاعیه‌ای یافت نشد
 شرکت دانش بنیان داده کاوان اندیشه برتر
